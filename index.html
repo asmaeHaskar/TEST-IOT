@@ -5,245 +5,64 @@
 
 <meta charset="UTF-8">
 
-<title>CO Detector ULTRA AI</title>
+<title>CO Detector SCADA</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script type="module">
-
-import { initializeApp }
-
-from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-
-import {
-
-getDatabase,
-
-ref,
-
-onValue
-
-}
-
-from
-
-"https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
-
-const app = initializeApp({
-
-databaseURL:
-
-"https://cosmart-detector-default-rtdb.firebaseio.com"
-
-});
-
-const db = getDatabase();
-
-let notified=false;
-
-window.onload=function(){
-
-const coText=document.getElementById("co");
-
-const tempText=document.getElementById("temp");
-
-const humText=document.getElementById("hum");
-
-const statusText=document.getElementById("status");
-
-const predictText=document.getElementById("predict");
-
-const wave=document.getElementById("wave");
-
-const ctx=document.getElementById("chart");
-
-let chart=new Chart(ctx,{
-
-type:'line',
-
-data:{
-
-labels:[],
-
-datasets:[{
-
-label:'CO',
-
-data:[],
-
-borderColor:'#00f5ff',
-
-borderWidth:3
-
-}]
-
-}
-
-});
-
-onValue(ref(db,"data"), snapshot=>{
-
-let data=snapshot.val();
-
-let co=data.co;
-
-let temp=data.temperature;
-
-let hum=data.humidity;
-
-coText.innerHTML=co;
-
-tempText.innerHTML=temp;
-
-humText.innerHTML=hum;
-
-let percent=co/5000*100;
-
-wave.style.height=percent+"%";
-
-let status="SAFE";
-
-let color="#00ffa6";
-
-if(co>3000){
-
-status="DANGER";
-
-color="#ff0000";
-
-if(!notified){
-
-Swal.fire({
-
-title:"DANGER",
-
-text:"CO Level Critical",
-
-icon:"error"
-
-});
-
-notified=true;
-
-}
-
-}
-
-else if(co>1500){
-
-status="WARNING";
-
-color="#ffaa00";
-
-notified=false;
-
-}
-
-else{
-
-notified=false;
-
-}
-
-statusText.innerHTML=status;
-
-statusText.style.color=color;
-
-wave.style.background=color;
-
-
-// AI Prediction
-
-let prediction="NORMAL";
-
-if(co>3000)
-
-prediction="CRITICAL RISK";
-
-else if(co>1500)
-
-prediction="MEDIUM RISK";
-
-predictText.innerHTML=prediction;
-
-
-// Chart
-
-chart.data.labels.push("");
-
-chart.data.datasets[0].data.push(co);
-
-chart.update();
-
-});
-
-}
-
-</script>
-
 <style>
 
 body{
 
-background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-
+background:#0a0f1c;
 color:white;
-
-font-family:sans-serif;
-
-text-align:center;
+font-family:Arial;
 
 }
 
 .card{
 
-width:350px;
-
-margin:auto;
-
-padding:20px;
+background:rgba(255,255,255,0.05);
 
 border-radius:20px;
 
-background:rgba(255,255,255,0.1);
+padding:20px;
 
-backdrop-filter:blur(20px);
+margin:20px;
+
+box-shadow:
+
+0 0 30px rgba(0,255,255,0.2);
 
 }
 
 .gauge{
 
 width:200px;
-
 height:200px;
 
 border-radius:50%;
 
-overflow:hidden;
+background:
 
-margin:auto;
+conic-gradient(
 
-position:relative;
+cyan 0deg,
 
-border:4px solid white;
+cyan 120deg,
+
+#111 120deg
+
+);
 
 }
 
-#wave{
+.glow{
 
-position:absolute;
+box-shadow:
 
-bottom:0;
-
-width:100%;
-
-height:10%;
-
-background:#00ffa6;
-
-transition:1s;
+0 0 20px cyan;
 
 }
 
@@ -253,29 +72,71 @@ transition:1s;
 
 <body>
 
+<h1>CO Smart Detector AI SCADA</h1>
+
 <div class="card">
 
-<h2>CO Detector AI</h2>
+<div class="gauge glow"
 
-<div class="gauge">
+id="gauge"></div>
 
-<div id="wave"></div>
+<h2 id="co">0</h2>
+
+<h3 id="status">SAFE</h3>
+
+<h3 id="predict">NORMAL</h3>
 
 </div>
-
-<h3>CO: <span id="co">0</span></h3>
-
-<h3>Temp: <span id="temp">0</span></h3>
-
-<h3>Humidity: <span id="hum">0</span></h3>
-
-<h3>Status: <span id="status">SAFE</span></h3>
-
-<h3>AI: <span id="predict">NORMAL</span></h3>
 
 <canvas id="chart"></canvas>
 
-</div>
+<script>
+
+let chart=new Chart(
+
+document.getElementById("chart"),
+
+{
+
+type:'line',
+
+data:{
+
+labels:[],
+
+datasets:[{
+
+data:[]
+
+}]
+
+}
+
+});
+
+function update(data){
+
+let co=data.co;
+
+let percent=co/5000*360;
+
+document.getElementById("gauge").style.background=
+
+`conic-gradient(
+
+cyan ${percent}deg,
+
+#111 ${percent}deg
+
+)`;
+
+chart.data.datasets[0].data.push(co);
+
+chart.update();
+
+}
+
+</script>
 
 </body>
 
