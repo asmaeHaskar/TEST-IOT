@@ -3,9 +3,13 @@
 
 <head>
 
-<title>CO Smart Detector</title>
+<title>CO Smart Detector PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/justgage"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/raphael"></script>
 
 <style>
 
@@ -14,22 +18,44 @@ body{
 background:#0f172a;
 color:white;
 font-family:Arial;
-text-align:center;
+
+}
+
+.container{
+
+display:flex;
+flex-wrap:wrap;
 
 }
 
 .card{
 
 background:#1e293b;
-margin:20px;
+margin:15px;
 padding:20px;
 border-radius:15px;
+flex:1;
+
+}
+
+#status{
+
+font-size:30px;
 
 }
 
 .safe{color:#22c55e;}
 .warning{color:#f59e0b;}
-.danger{color:#ef4444;}
+.danger{
+color:#ef4444;
+animation: blink 1s infinite;
+}
+
+@keyframes blink{
+
+50%{opacity:0;}
+
+}
 
 </style>
 
@@ -37,17 +63,25 @@ border-radius:15px;
 
 <body>
 
-<h1>CO Smart Detector</h1>
+<h1>CO Smart Detector PRO</h1>
+
+<div class="container">
 
 <div class="card">
 
-<h2 id="co">CO: --</h2>
+<div id="gauge" style="width:200px;height:160px"></div>
 
-<h2 id="temp">Temp: --</h2>
+</div>
 
-<h2 id="hum">Humidity: --</h2>
+<div class="card">
 
-<h2 id="status">Status: --</h2>
+<h2 id="temp"></h2>
+
+<h2 id="hum"></h2>
+
+<h2 id="status"></h2>
+
+</div>
 
 </div>
 
@@ -61,19 +95,38 @@ border-radius:15px;
 
 var url="https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
 
-var coData=[];
+var gauge=new JustGage({
+
+id:"gauge",
+
+value:0,
+
+min:0,
+
+max:5000,
+
+title:"CO Level"
+
+});
 
 var chart=new Chart(document.getElementById("chart"),{
 
 type:'line',
 
 data:{
+
 labels:[],
+
 datasets:[{
-label:'CO Level',
-data:coData,
-borderColor:'red'
+
+label:"CO",
+
+data:[],
+
+borderColor:"red"
+
 }]
+
 }
 
 });
@@ -86,7 +139,7 @@ fetch(url)
 
 .then(data=>{
 
-document.getElementById("co").innerHTML="CO: "+data.co;
+gauge.refresh(data.co);
 
 document.getElementById("temp").innerHTML="Temp: "+data.temperature;
 
@@ -109,11 +162,11 @@ className="warning";
 
 }
 
-var statusElement=document.getElementById("status");
+var s=document.getElementById("status");
 
-statusElement.innerHTML=status;
+s.innerHTML=status;
 
-statusElement.className=className;
+s.className=className;
 
 chart.data.labels.push("");
 
@@ -130,5 +183,4 @@ setInterval(loadData,2000);
 </script>
 
 </body>
-
 </html>
