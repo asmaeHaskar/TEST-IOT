@@ -11,6 +11,155 @@
 
 <script src="https://cdn.jsdelivr.net/npm/raphael"></script>
 
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+
+import {
+getDatabase,
+ref,
+onValue
+}
+from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+const app = initializeApp({
+
+databaseURL:
+"https://cosmart-detector-default-rtdb.firebaseio.com"
+
+});
+
+const db = getDatabase();
+
+window.onload=function(){
+
+// Gauge
+
+var gauge=new JustGage({
+
+id:"gauge",
+
+value:0,
+
+min:0,
+
+max:5000,
+
+title:"CO Level"
+
+});
+
+// Chart
+
+var maxPoints=30;
+
+var chart=new Chart(
+
+document.getElementById("chart"),
+
+{
+
+type:'line',
+
+data:{
+
+labels:[],
+
+datasets:[{
+
+label:"CO Level",
+
+data:[],
+
+borderColor:"red",
+
+borderWidth:2
+
+}]
+
+},
+
+options:{
+
+animation:false,
+
+responsive:true
+
+}
+
+});
+
+// Realtime Firebase
+
+onValue(ref(db,"data"), (snapshot)=>{
+
+var data=snapshot.val();
+
+// update gauge
+
+gauge.refresh(data.co);
+
+// update text
+
+document.getElementById("temp").innerHTML=
+"Temp: "+data.temperature+" °C";
+
+document.getElementById("hum").innerHTML=
+"Humidity: "+data.humidity+" %";
+
+// status
+
+var status="SAFE";
+var className="safe";
+
+if(data.co>3000)
+{
+
+status="DANGER";
+className="danger";
+
+}
+else if(data.co>1500)
+{
+
+status="WARNING";
+className="warning";
+
+}
+
+var s=document.getElementById("status");
+
+s.innerHTML=status;
+
+s.className=className;
+
+
+// update chart
+
+chart.data.labels.push("");
+
+chart.data.datasets[0].data.push(data.co);
+
+// limit size
+
+if(chart.data.labels.length>maxPoints)
+{
+
+chart.data.labels.shift();
+
+chart.data.datasets[0].data.shift();
+
+}
+
+chart.update("none");
+
+});
+
+}
+
+</script>
+
 <style>
 
 body{
@@ -46,9 +195,13 @@ font-size:30px;
 
 .safe{color:#22c55e;}
 .warning{color:#f59e0b;}
+
 .danger{
+
 color:#ef4444;
+
 animation: blink 1s infinite;
+
 }
 
 @keyframes blink{
@@ -69,7 +222,8 @@ animation: blink 1s infinite;
 
 <div class="card">
 
-<div id="gauge" style="width:200px;height:160px"></div>
+<div id="gauge"
+style="width:200px;height:160px"></div>
 
 </div>
 
@@ -91,96 +245,6 @@ animation: blink 1s infinite;
 
 </div>
 
-<script>
-
-var url="https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
-
-var gauge=new JustGage({
-
-id:"gauge",
-
-value:0,
-
-min:0,
-
-max:5000,
-
-title:"CO Level"
-
-});
-
-var chart=new Chart(document.getElementById("chart"),{
-
-type:'line',
-
-data:{
-
-labels:[],
-
-datasets:[{
-
-label:"CO",
-
-data:[],
-
-borderColor:"red"
-
-}]
-
-}
-
-});
-
-function loadData(){
-
-fetch(url)
-
-.then(res=>res.json())
-
-.then(data=>{
-
-gauge.refresh(data.co);
-
-document.getElementById("temp").innerHTML="Temp: "+data.temperature;
-
-document.getElementById("hum").innerHTML="Humidity: "+data.humidity;
-
-var status="SAFE";
-var className="safe";
-
-if(data.co>3000){
-
-status="DANGER";
-className="danger";
-
-}
-
-else if(data.co>1500){
-
-status="WARNING";
-className="warning";
-
-}
-
-var s=document.getElementById("status");
-
-s.innerHTML=status;
-
-s.className=className;
-
-chart.data.labels.push("");
-
-chart.data.datasets[0].data.push(data.co);
-
-chart.update();
-
-});
-
-}
-
-setInterval(loadData,2000);
-
-</script>
-
 </body>
+
 </html>
