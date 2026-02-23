@@ -3,170 +3,105 @@
 
 <head>
 
-<title>CO Smart Detector PRO</title>
+<title>CO Smart Detector AI PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/justgage"></script>
+<script type="module">
 
-<script src="https://cdn.jsdelivr.net/npm/raphael"></script>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 
-<style>
+import { getDatabase, ref, onValue }
 
-body{
+from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-background:#0f172a;
-color:white;
-font-family:Arial;
+const firebaseConfig = {
+
+databaseURL:
+
+"https://cosmart-detector-default-rtdb.firebaseio.com"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase();
+
+const coElement = document.getElementById("co");
+
+const tempElement = document.getElementById("temp");
+
+const humElement = document.getElementById("hum");
+
+const statusElement = document.getElementById("status");
+
+const chart = new Chart(
+
+document.getElementById("chart"),
+
+{
+
+type: 'line',
+
+data: {
+
+labels: [],
+
+datasets: [
+
+{
+
+label: 'CO',
+
+data: [],
+
+borderWidth: 2
 
 }
 
-.container{
-
-display:flex;
-flex-wrap:wrap;
-
-}
-
-.card{
-
-background:#1e293b;
-margin:15px;
-padding:20px;
-border-radius:15px;
-flex:1;
-
-}
-
-#status{
-
-font-size:30px;
-
-}
-
-.safe{color:#22c55e;}
-.warning{color:#f59e0b;}
-.danger{
-color:#ef4444;
-animation: blink 1s infinite;
-}
-
-@keyframes blink{
-
-50%{opacity:0;}
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h1>CO Smart Detector PRO</h1>
-
-<div class="container">
-
-<div class="card">
-
-<div id="gauge" style="width:200px;height:160px"></div>
-
-</div>
-
-<div class="card">
-
-<h2 id="temp"></h2>
-
-<h2 id="hum"></h2>
-
-<h2 id="status"></h2>
-
-</div>
-
-</div>
-
-<div class="card">
-
-<canvas id="chart"></canvas>
-
-</div>
-
-<script>
-
-var url="https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
-
-var gauge=new JustGage({
-
-id:"gauge",
-
-value:0,
-
-min:0,
-
-max:5000,
-
-title:"CO Level"
-
-});
-
-var chart=new Chart(document.getElementById("chart"),{
-
-type:'line',
-
-data:{
-
-labels:[],
-
-datasets:[{
-
-label:"CO",
-
-data:[],
-
-borderColor:"red"
-
-}]
+]
 
 }
 
 });
 
-function loadData(){
+onValue(ref(db, "data"), (snapshot) => {
 
-fetch(url)
+const data = snapshot.val();
 
-.then(res=>res.json())
+coElement.innerHTML = data.co;
 
-.then(data=>{
+tempElement.innerHTML = data.temperature;
 
-gauge.refresh(data.co);
+humElement.innerHTML = data.humidity;
 
-document.getElementById("temp").innerHTML="Temp: "+data.temperature;
+let status = "SAFE";
 
-document.getElementById("hum").innerHTML="Humidity: "+data.humidity;
+let color = "green";
 
-var status="SAFE";
-var className="safe";
+if (data.co > 3000)
 
-if(data.co>3000){
+{
 
-status="DANGER";
-className="danger";
+status = "DANGER";
 
-}
-
-else if(data.co>1500){
-
-status="WARNING";
-className="warning";
+color = "red";
 
 }
 
-var s=document.getElementById("status");
+else if (data.co > 1500)
 
-s.innerHTML=status;
+{
 
-s.className=className;
+status = "WARNING";
+
+color = "orange";
+
+}
+
+statusElement.innerHTML = status;
+
+statusElement.style.color = color;
 
 chart.data.labels.push("");
 
@@ -176,11 +111,62 @@ chart.update();
 
 });
 
-}
-
-setInterval(loadData,2000);
-
 </script>
 
+<style>
+
+body{
+
+background:black;
+
+color:white;
+
+font-family:Arial;
+
+text-align:center;
+
+}
+
+.card{
+
+background:#111;
+
+padding:20px;
+
+margin:20px;
+
+border-radius:10px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>AI CO Detector</h1>
+
+<div class="card">
+
+CO: <span id="co">--</span>
+
+<br>
+
+Temp: <span id="temp">--</span>
+
+<br>
+
+Humidity: <span id="hum">--</span>
+
+<br>
+
+Status: <span id="status">--</span>
+
+</div>
+
+<canvas id="chart"></canvas>
+
 </body>
+
 </html>
