@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>CO Smart Detector</title>
+
+<style>
+
+body{
+
+background:black;
+color:white;
+font-family:Arial;
+text-align:center;
+
+}
+
+.card{
+
+background:#1e1e1e;
+padding:20px;
+margin:20px;
+border-radius:10px;
+
+}
+
+.safe{color:green;}
+.warning{color:orange;}
+.danger{color:red;}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>CO Smart Detector</h1>
+
+<div class="card">
+
+<h2 id="co">CO: --</h2>
+
+<h2 id="temp">Temp: --</h2>
+
+<h2 id="hum">Humidity: --</h2>
+
+<h2 id="status">Status: --</h2>
+
+</div>
+
+<script>
+
+var url="https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
+
+function loadData(){
+
+fetch(url)
+
+.then(response=>response.json())
+
+.then(data=>{
+
+document.getElementById("co").innerHTML="CO: "+data.co;
+
+document.getElementById("temp").innerHTML="Temp: "+data.temperature;
+
+document.getElementById("hum").innerHTML="Humidity: "+data.humidity;
+
+var status="SAFE";
+
+if(data.co>3000)
+status="DANGER";
+else if(data.co>1500)
+status="WARNING";
+
+document.getElementById("status").innerHTML=status;
+
+});
+
+}
+
+setInterval(loadData,2000);
+
+</script>
+
+</body>
+</html>
