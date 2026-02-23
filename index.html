@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
 
 <meta charset="UTF-8">
 
-<title>CO Smart Detector Liquid UI</title>
+<title>CO Detector ULTRA AI</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script type="module">
 
@@ -27,7 +31,6 @@ from
 
 "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-
 const app = initializeApp({
 
 databaseURL:
@@ -36,53 +39,95 @@ databaseURL:
 
 });
 
-
 const db = getDatabase();
 
-window.onload = function(){
+let notified=false;
 
+window.onload=function(){
 
-const coText = document.getElementById("co");
+const coText=document.getElementById("co");
 
-const tempText = document.getElementById("temp");
+const tempText=document.getElementById("temp");
 
-const humText = document.getElementById("hum");
+const humText=document.getElementById("hum");
 
-const statusText = document.getElementById("status");
+const statusText=document.getElementById("status");
 
-const liquid = document.getElementById("liquid");
+const predictText=document.getElementById("predict");
 
+const wave=document.getElementById("wave");
+
+const ctx=document.getElementById("chart");
+
+let chart=new Chart(ctx,{
+
+type:'line',
+
+data:{
+
+labels:[],
+
+datasets:[{
+
+label:'CO',
+
+data:[],
+
+borderColor:'#00f5ff',
+
+borderWidth:3
+
+}]
+
+}
+
+});
 
 onValue(ref(db,"data"), snapshot=>{
 
+let data=snapshot.val();
 
-let data = snapshot.val();
+let co=data.co;
 
-let co = data.co;
+let temp=data.temperature;
 
+let hum=data.humidity;
 
-coText.innerHTML = co;
+coText.innerHTML=co;
 
-tempText.innerHTML = data.temperature+"°C";
+tempText.innerHTML=temp;
 
-humText.innerHTML = data.humidity+"%";
+humText.innerHTML=hum;
 
+let percent=co/5000*100;
 
-let percent = co/5000*100;
-
-liquid.style.height = percent+"%";
-
+wave.style.height=percent+"%";
 
 let status="SAFE";
 
 let color="#00ffa6";
 
-
 if(co>3000){
 
 status="DANGER";
 
-color="#ff3b3b";
+color="#ff0000";
+
+if(!notified){
+
+Swal.fire({
+
+title:"DANGER",
+
+text:"CO Level Critical",
+
+icon:"error"
+
+});
+
+notified=true;
+
+}
 
 }
 
@@ -92,18 +137,47 @@ status="WARNING";
 
 color="#ffaa00";
 
+notified=false;
+
 }
 
+else{
+
+notified=false;
+
+}
 
 statusText.innerHTML=status;
 
 statusText.style.color=color;
 
-liquid.style.background=color;
+wave.style.background=color;
 
+
+// AI Prediction
+
+let prediction="NORMAL";
+
+if(co>3000)
+
+prediction="CRITICAL RISK";
+
+else if(co>1500)
+
+prediction="MEDIUM RISK";
+
+predictText.innerHTML=prediction;
+
+
+// Chart
+
+chart.data.labels.push("");
+
+chart.data.datasets[0].data.push(co);
+
+chart.update();
 
 });
-
 
 }
 
@@ -113,70 +187,51 @@ liquid.style.background=color;
 
 body{
 
-margin:0;
-
-height:100vh;
-
-background:
-
-linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-font-family:sans-serif;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 
 color:white;
 
-}
-
-
-.card{
-
-width:320px;
-
-padding:25px;
-
-border-radius:20px;
-
-background:
-
-rgba(255,255,255,0.1);
-
-backdrop-filter:blur(20px);
-
-box-shadow:
-
-0 0 40px rgba(0,0,0,0.3);
+font-family:sans-serif;
 
 text-align:center;
 
 }
 
+.card{
 
-.gauge{
-
-width:150px;
-
-height:150px;
-
-border-radius:50%;
-
-border:4px solid rgba(255,255,255,0.2);
+width:350px;
 
 margin:auto;
 
-overflow:hidden;
+padding:20px;
 
-position:relative;
+border-radius:20px;
+
+background:rgba(255,255,255,0.1);
+
+backdrop-filter:blur(20px);
 
 }
 
+.gauge{
 
-.liquid{
+width:200px;
+
+height:200px;
+
+border-radius:50%;
+
+overflow:hidden;
+
+margin:auto;
+
+position:relative;
+
+border:4px solid white;
+
+}
+
+#wave{
 
 position:absolute;
 
@@ -192,33 +247,6 @@ transition:1s;
 
 }
 
-
-h1{
-
-margin-bottom:20px;
-
-}
-
-
-.data{
-
-margin-top:15px;
-
-font-size:18px;
-
-}
-
-
-#status{
-
-font-size:22px;
-
-font-weight:bold;
-
-margin-top:10px;
-
-}
-
 </style>
 
 </head>
@@ -227,43 +255,25 @@ margin-top:10px;
 
 <div class="card">
 
-<h1>CO Detector</h1>
+<h2>CO Detector AI</h2>
 
 <div class="gauge">
 
-<div class="liquid"
-
-id="liquid"></div>
+<div id="wave"></div>
 
 </div>
 
-<div class="data">
+<h3>CO: <span id="co">0</span></h3>
 
-CO: <span id="co">0</span>
+<h3>Temp: <span id="temp">0</span></h3>
 
-</div>
+<h3>Humidity: <span id="hum">0</span></h3>
 
-<div class="data">
+<h3>Status: <span id="status">SAFE</span></h3>
 
-Temp:
+<h3>AI: <span id="predict">NORMAL</span></h3>
 
-<span id="temp">0</span>
-
-</div>
-
-<div class="data">
-
-Humidity:
-
-<span id="hum">0</span>
-
-</div>
-
-<div id="status">
-
-SAFE
-
-</div>
+<canvas id="chart"></canvas>
 
 </div>
 
