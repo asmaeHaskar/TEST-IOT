@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html>
-<html lang="fr">
+
 <head>
 
 <title>CO Smart Detector</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
 
-background:black;
+background:#0f172a;
 color:white;
 font-family:Arial;
 text-align:center;
@@ -18,157 +20,19 @@ text-align:center;
 
 .card{
 
-background:#1e1e1e;
-padding:20px;
+background:#1e293b;
 margin:20px;
-border-radius:10px;
+padding:20px;
+border-radius:15px;
 
 }
 
-.safe{color:green;}
-.warning{color:orange;}
-.danger{color:red;}
+.safe{color:#22c55e;}
+.warning{color:#f59e0b;}
+.danger{color:#ef4444;}
 
 </style>
 
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CO Smart Detector PRO</title>
-  
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/justgage@1.6.0/raphael.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/justgage@1.6.0/justgage.min.js"></script>
-
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --text: #e2e8f0;
-      --text-light: #94a3b8;
-      --primary: #3b82f6;
-      --safe: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --danger-glow: #dc2626;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      padding: 1.5rem;
-      line-height: 1.5;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
-
-    h1 {
-      font-size: 2.25rem;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      background: linear-gradient(90deg, #60a5fa, #a5b4fc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .dashboard {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 1.5rem;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: 1rem;
-      padding: 1.75rem;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.06);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 35px -10px rgba(0,0,0,0.5);
-    }
-
-    .gauge-card {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 260px;
-    }
-
-    #gauge {
-      width: 240px !important;
-      height: 180px !important;
-    }
-
-    .info-card h2 {
-      font-size: 1.35rem;
-      margin: 1rem 0;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .info-card i {
-      font-size: 1.4rem;
-    }
-
-    #status {
-      font-size: 2.8rem;
-      font-weight: 800;
-      text-align: center;
-      margin: 1.5rem 0;
-      padding: 1rem;
-      border-radius: 1rem;
-      transition: all 0.4s ease;
-    }
-
-    .safe    { background: rgba(16,185,129,0.15); color: var(--safe);    border: 2px solid var(--safe);    }
-    .warning { background: rgba(245,158, 11,0.15); color: var(--warning); border: 2px solid var(--warning); }
-    .danger  { 
-      background: rgba(239,68,68,0.2); 
-      color: var(--danger); 
-      border: 2px solid var(--danger);
-      animation: pulse 2s infinite;
-      box-shadow: 0 0 20px rgba(239,68,68,0.35);
-    }
-
-    @keyframes pulse {
-      0%,100% { transform: scale(1);   }
-      50%     { transform: scale(1.04); }
-    }
-
-    .chart-card {
-      grid-column: 1 / -1;           /* prend toute la largeur */
-    }
-
-    .status-icon {
-      font-size: 1.8rem;
-      margin-right: 0.5rem;
-    }
-
-    @media (max-width: 800px) {
-      .dashboard { grid-template-columns: 1fr; }
-      #gauge { width: 220px !important; height: 165px !important; }
-      #status { font-size: 2.4rem; }
-    }
-  </style>
 </head>
 
 <body>
@@ -187,15 +51,38 @@ border-radius:10px;
 
 </div>
 
+<div class="card">
+
+<canvas id="chart"></canvas>
+
+</div>
+
 <script>
 
 var url="https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
+
+var coData=[];
+
+var chart=new Chart(document.getElementById("chart"),{
+
+type:'line',
+
+data:{
+labels:[],
+datasets:[{
+label:'CO Level',
+data:coData,
+borderColor:'red'
+}]
+}
+
+});
 
 function loadData(){
 
 fetch(url)
 
-.then(response=>response.json())
+.then(res=>res.json())
 
 .then(data=>{
 
@@ -206,13 +93,33 @@ document.getElementById("temp").innerHTML="Temp: "+data.temperature;
 document.getElementById("hum").innerHTML="Humidity: "+data.humidity;
 
 var status="SAFE";
+var className="safe";
 
-if(data.co>3000)
+if(data.co>3000){
+
 status="DANGER";
-else if(data.co>1500)
-status="WARNING";
+className="danger";
 
-document.getElementById("status").innerHTML=status;
+}
+
+else if(data.co>1500){
+
+status="WARNING";
+className="warning";
+
+}
+
+var statusElement=document.getElementById("status");
+
+statusElement.innerHTML=status;
+
+statusElement.className=className;
+
+chart.data.labels.push("");
+
+chart.data.datasets[0].data.push(data.co);
+
+chart.update();
 
 });
 
@@ -221,147 +128,7 @@ document.getElementById("status").innerHTML=status;
 setInterval(loadData,2000);
 
 </script>
-  <header>
-    <h1>CO Smart Detector PRO</h1>
-  </header>
-
-  <div class="dashboard">
-
-    <!-- Carte jauge principale -->
-    <div class="card gauge-card">
-      <div id="gauge"></div>
-    </div>
-
-    <!-- Infos température, humidité, statut -->
-    <div class="card info-card">
-      <h2><i class="fas fa-temperature-high"></i> <span id="temp">—</span></h2>
-      <h2><i class="fas fa-water"></i>     <span id="hum">—</span></h2>
-      
-      <div id="status" class="safe">SAFE</div>
-    </div>
-
-    <!-- Graphique historique -->
-    <div class="card chart-card">
-      <h2 style="margin-bottom:1.25rem;"><i class="fas fa-chart-line"></i> Historique CO (ppm)</h2>
-      <canvas id="chart"></canvas>
-    </div>
-
-  </div>
-
-  <script>
-    const url = "https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
-
-    // Initialisation jauge (style plus moderne)
-    const gauge = new JustGage({
-      id: "gauge",
-      value: 0,
-      min: 0,
-      max: 5000,
-      title: "Niveau CO (ppm)",
-      label: "ppm",
-      gaugeWidthScale: 0.75,
-      levelColors: ["#10b981", "#f59e0b", "#ef4444", "#dc2626"],
-      levelColorsGradient: true,
-      pointer: true,
-      pointerOptions: { toplength: 10, bottomlength: 10, bottomwidth: 8, color: '#ffffff' },
-      counter: true,
-      formatNumber: true,
-      titleFontColor: "#e2e8f0",
-      valueFontColor: "#ffffff",
-      valueMinFontSize: 32,
-      titlePosition: "below",
-      titleFontFamily: "inherit",
-      valueFontFamily: "inherit"
-    });
-
-    // Graphique Chart.js
-    const ctx = document.getElementById("chart").getContext("2d");
-    const chart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: [],
-        datasets: [{
-          label: "CO (ppm)",
-          data: [],
-          borderColor: "#f87171",
-          backgroundColor: "rgba(248, 113, 113, 0.12)",
-          tension: 0.4,
-          fill: true,
-          pointBackgroundColor: "#f87171",
-          pointBorderColor: "#fff",
-          pointRadius: 4,
-          pointHoverRadius: 7,
-          borderWidth: 3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { mode: "index", intersect: false }
-        },
-        scales: {
-          x: { display: false },
-          y: {
-            beginAtZero: true,
-            max: 5500,
-            grid: { color: "rgba(255,255,255,0.08)" },
-            ticks: { color: "rgba(255,255,255,0.6)" }
-          }
-        },
-        interaction: { mode: "nearest", axis: "x", intersect: false },
-        elements: { line: { tension: 0.35 } }
-      }
-    });
-
-    function loadData() {
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (!data || typeof data.co !== "number") return;
-
-          // Mise à jour jauge
-          gauge.refresh(data.co);
-
-          // Temp & Humidité
-          document.getElementById("temp").textContent = `Température : ${data.temperature ?? "?"} °C`;
-          document.getElementById("hum").textContent  = `Humidité : ${data.humidity ?? "?"} %`;
-
-          // Statut + style
-          let statusEl = document.getElementById("status");
-          let statusText = "SAFE";
-          let statusClass = "safe";
-
-          if (data.co > 3000) {
-            statusText = "DANGER";
-            statusClass = "danger";
-          } else if (data.co > 1500) {
-            statusText = "ATTENTION";
-            statusClass = "warning";
-          }
-
-          statusEl.textContent = statusText;
-          statusEl.className = statusClass;
-
-          // Graphique (limite à ~60 points pour éviter surcharge)
-          chart.data.labels.push(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
-          chart.data.datasets[0].data.push(data.co);
-
-          if (chart.data.labels.length > 60) {
-            chart.data.labels.shift();
-            chart.data.datasets[0].data.shift();
-          }
-
-          chart.update();
-        })
-        .catch(err => console.error("Erreur fetch :", err));
-    }
-
-    loadData();                    // premier chargement immédiat
-    setInterval(loadData, 4000);   // rafraîchissement toutes les 4s (moins agressif)
-  </script>
 
 </body>
-</html>
+
 </html>
