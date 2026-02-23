@@ -1,115 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>CO Smart Detector AI PRO</title>
+<meta charset="UTF-8">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>CO Smart Detector Liquid UI</title>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { initializeApp }
 
-import { getDatabase, ref, onValue }
+from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 
-from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import {
 
-const firebaseConfig = {
+getDatabase,
+
+ref,
+
+onValue
+
+}
+
+from
+
+"https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+
+const app = initializeApp({
 
 databaseURL:
 
 "https://cosmart-detector-default-rtdb.firebaseio.com"
 
-};
+});
 
-const app = initializeApp(firebaseConfig);
 
 const db = getDatabase();
 
-const coElement = document.getElementById("co");
+window.onload = function(){
 
-const tempElement = document.getElementById("temp");
 
-const humElement = document.getElementById("hum");
+const coText = document.getElementById("co");
 
-const statusElement = document.getElementById("status");
+const tempText = document.getElementById("temp");
 
-const chart = new Chart(
+const humText = document.getElementById("hum");
 
-document.getElementById("chart"),
+const statusText = document.getElementById("status");
 
-{
+const liquid = document.getElementById("liquid");
 
-type: 'line',
 
-data: {
+onValue(ref(db,"data"), snapshot=>{
 
-labels: [],
 
-datasets: [
+let data = snapshot.val();
 
-{
+let co = data.co;
 
-label: 'CO',
 
-data: [],
+coText.innerHTML = co;
 
-borderWidth: 2
+tempText.innerHTML = data.temperature+"°C";
+
+humText.innerHTML = data.humidity+"%";
+
+
+let percent = co/5000*100;
+
+liquid.style.height = percent+"%";
+
+
+let status="SAFE";
+
+let color="#00ffa6";
+
+
+if(co>3000){
+
+status="DANGER";
+
+color="#ff3b3b";
 
 }
 
-]
+else if(co>1500){
+
+status="WARNING";
+
+color="#ffaa00";
 
 }
+
+
+statusText.innerHTML=status;
+
+statusText.style.color=color;
+
+liquid.style.background=color;
+
 
 });
 
-onValue(ref(db, "data"), (snapshot) => {
-
-const data = snapshot.val();
-
-coElement.innerHTML = data.co;
-
-tempElement.innerHTML = data.temperature;
-
-humElement.innerHTML = data.humidity;
-
-let status = "SAFE";
-
-let color = "green";
-
-if (data.co > 3000)
-
-{
-
-status = "DANGER";
-
-color = "red";
 
 }
-
-else if (data.co > 1500)
-
-{
-
-status = "WARNING";
-
-color = "orange";
-
-}
-
-statusElement.innerHTML = status;
-
-statusElement.style.color = color;
-
-chart.data.labels.push("");
-
-chart.data.datasets[0].data.push(data.co);
-
-chart.update();
-
-});
 
 </script>
 
@@ -117,25 +113,109 @@ chart.update();
 
 body{
 
-background:black;
+margin:0;
+
+height:100vh;
+
+background:
+
+linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+font-family:sans-serif;
 
 color:white;
 
-font-family:Arial;
+}
+
+
+.card{
+
+width:320px;
+
+padding:25px;
+
+border-radius:20px;
+
+background:
+
+rgba(255,255,255,0.1);
+
+backdrop-filter:blur(20px);
+
+box-shadow:
+
+0 0 40px rgba(0,0,0,0.3);
 
 text-align:center;
 
 }
 
-.card{
 
-background:#111;
+.gauge{
 
-padding:20px;
+width:150px;
 
-margin:20px;
+height:150px;
 
-border-radius:10px;
+border-radius:50%;
+
+border:4px solid rgba(255,255,255,0.2);
+
+margin:auto;
+
+overflow:hidden;
+
+position:relative;
+
+}
+
+
+.liquid{
+
+position:absolute;
+
+bottom:0;
+
+width:100%;
+
+height:10%;
+
+background:#00ffa6;
+
+transition:1s;
+
+}
+
+
+h1{
+
+margin-bottom:20px;
+
+}
+
+
+.data{
+
+margin-top:15px;
+
+font-size:18px;
+
+}
+
+
+#status{
+
+font-size:22px;
+
+font-weight:bold;
+
+margin-top:10px;
 
 }
 
@@ -145,27 +225,47 @@ border-radius:10px;
 
 <body>
 
-<h1>AI CO Detector</h1>
-
 <div class="card">
 
-CO: <span id="co">--</span>
+<h1>CO Detector</h1>
 
-<br>
+<div class="gauge">
 
-Temp: <span id="temp">--</span>
+<div class="liquid"
 
-<br>
-
-Humidity: <span id="hum">--</span>
-
-<br>
-
-Status: <span id="status">--</span>
+id="liquid"></div>
 
 </div>
 
-<canvas id="chart"></canvas>
+<div class="data">
+
+CO: <span id="co">0</span>
+
+</div>
+
+<div class="data">
+
+Temp:
+
+<span id="temp">0</span>
+
+</div>
+
+<div class="data">
+
+Humidity:
+
+<span id="hum">0</span>
+
+</div>
+
+<div id="status">
+
+SAFE
+
+</div>
+
+</div>
 
 </body>
 
