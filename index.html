@@ -1,65 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>CO Smart Detector PRO</title>
+<meta charset="UTF-8">
+
+<title>CO & Smoke Smart Detector PRO</title>
+
+<!-- Libraries -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/justgage"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/raphael"></script>
+
 
 <style>
 
+/* -------- GENERAL STYLE -------- */
+
 body{
+
 background:#0f172a;
 color:white;
 font-family:Arial;
 text-align:center;
+
 }
 
+
+h1{
+
+margin-top:20px;
+
+}
+
+
+/* -------- CARD -------- */
+
+.container{
+
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+
+}
+
+
 .card{
+
 background:#1e293b;
 margin:15px;
 padding:20px;
 border-radius:15px;
+width:300px;
+
 }
 
-#status{
-font-size:30px;
+
+/* -------- STATUS COLORS -------- */
+
+.safe{
+
+color:#22c55e;
+
 }
 
-.safe{color:#22c55e;}
-.warning{color:#f59e0b;}
+.warning{
+
+color:#f59e0b;
+
+}
+
 .danger{
+
 color:#ef4444;
 animation: blink 1s infinite;
+
 }
+
 
 @keyframes blink{
+
 50%{opacity:0;}
+
 }
 
+
+/* -------- VALUE STYLE -------- */
+
+.value{
+
+font-size:25px;
+
+}
+
+
 </style>
+
 
 </head>
 
 
 <body>
 
-<h1>CO Smart Detector Dashboard</h1>
 
+<h1>Smart Gas Detector Dashboard</h1>
+
+
+
+<div class="container">
+
+
+<!-- CO Gauge -->
 
 <div class="card">
 
-<div id="gauge" style="width:200px;height:160px;margin:auto;"></div>
+<h2>CO Level</h2>
 
-<h2 id="co"></h2>
-<h2 id="smoke"></h2>
-<h2 id="status"></h2>
+<div id="gaugeCO"></div>
 
 </div>
 
+
+
+<!-- Smoke Gauge -->
+
+<div class="card">
+
+<h2>Smoke Level</h2>
+
+<div id="gaugeSmoke"></div>
+
+</div>
+
+
+
+<!-- Status -->
+
+<div class="card">
+
+<h2>Status</h2>
+
+<div id="status" class="value">--</div>
+
+</div>
+
+
+</div>
+
+
+
+<!-- Chart -->
 
 <div class="card">
 
@@ -68,16 +161,31 @@ animation: blink 1s infinite;
 </div>
 
 
+
+<!-- Alarm sound -->
+
+<audio id="alarmSound">
+
+<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+
+</audio>
+
+
+
 <script>
+
+
+// -------- Firebase URL --------
 
 var url="https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
 
 
-// Gauge
 
-var gauge=new JustGage({
+// -------- Create Gauges --------
 
-id:"gauge",
+var gaugeCO=new JustGage({
+
+id:"gaugeCO",
 
 value:0,
 
@@ -85,20 +193,40 @@ min:0,
 
 max:5000,
 
-title:"CO Level"
+title:"CO"
 
 });
 
 
-// Chart
+var gaugeSmoke=new JustGage({
+
+id:"gaugeSmoke",
+
+value:0,
+
+min:0,
+
+max:5000,
+
+title:"Smoke"
+
+});
+
+
+
+// -------- Create Chart --------
 
 var chart=new Chart(document.getElementById("chart"),{
 
 type:'line',
 
 data:{
+
 labels:[],
-datasets:[{
+
+datasets:[
+
+{
 
 label:"CO",
 
@@ -106,13 +234,28 @@ data:[],
 
 borderColor:"red"
 
-}]
+},
+
+{
+
+label:"Smoke",
+
+data:[],
+
+borderColor:"blue"
+
+}
+
+]
 
 }
 
 });
 
 
+
+
+// -------- Load Data --------
 
 function loadData(){
 
@@ -123,47 +266,65 @@ fetch(url)
 .then(data=>{
 
 
-// تحديث القيم
+// update gauges
 
-gauge.refresh(data.co);
+gaugeCO.refresh(data.co);
 
-document.getElementById("co").innerHTML="CO: "+data.co;
-
-document.getElementById("smoke").innerHTML="SMOKE: "+data.smoke;
+gaugeSmoke.refresh(data.smoke);
 
 
+// update status
 
-// استعمال status من Firebase مباشرة
+var statusElement=document.getElementById("status");
 
-var status=data.status;
-
-var className="safe";
-
-
-if(status=="DANGER")
-
-className="danger";
-
-else if(status=="WARNING")
-
-className="warning";
+statusElement.innerHTML=data.status;
 
 
-var s=document.getElementById("status");
+// remove old class
 
-s.innerHTML=status;
-
-s.className=className;
+statusElement.className="value";
 
 
+// apply color
 
-// chart
+if(data.status=="SAFE"){
+
+statusElement.classList.add("safe");
+
+stopAlarm();
+
+}
+
+
+else if(data.status=="WARNING"){
+
+statusElement.classList.add("warning");
+
+stopAlarm();
+
+}
+
+
+else{
+
+statusElement.classList.add("danger");
+
+playAlarm();
+
+}
+
+
+
+// update chart
 
 chart.data.labels.push("");
 
 chart.data.datasets[0].data.push(data.co);
 
+chart.data.datasets[1].data.push(data.smoke);
+
 chart.update();
+
 
 
 });
@@ -171,10 +332,31 @@ chart.update();
 }
 
 
+
+// -------- Alarm Sound --------
+
+function playAlarm(){
+
+document.getElementById("alarmSound").play();
+
+}
+
+
+function stopAlarm(){
+
+document.getElementById("alarmSound").pause();
+
+}
+
+
+
+// -------- Refresh every second --------
+
 setInterval(loadData,1000);
 
 
 </script>
+
 
 
 </body>
