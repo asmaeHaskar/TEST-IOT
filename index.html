@@ -1,364 +1,225 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>CO & Smoke Smart Detector PROxy</title>
-
-<!-- Libraries -->
+<title>Smart CO Detector Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/justgage"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/raphael"></script>
-
 
 <style>
 
-/* -------- GENERAL STYLE -------- */
-
 body{
-
 background:#0f172a;
-color:white;
 font-family:Arial;
+color:white;
 text-align:center;
-
 }
-
 
 h1{
-
-margin-top:20px;
-
+margin:20px;
 }
 
-
-/* -------- CARD -------- */
-
 .container{
-
 display:flex;
 flex-wrap:wrap;
 justify-content:center;
-
 }
-
 
 .card{
-
 background:#1e293b;
-margin:15px;
+margin:10px;
 padding:20px;
 border-radius:15px;
-width:300px;
-
+width:320px;
+box-shadow:0 0 10px rgba(0,0,0,0.4);
 }
-
-
-/* -------- STATUS COLORS -------- */
-
-.safe{
-
-color:#22c55e;
-
-}
-
-.warning{
-
-color:#f59e0b;
-
-}
-
-.danger{
-
-color:#ef4444;
-animation: blink 1s infinite;
-
-}
-
-
-@keyframes blink{
-
-50%{opacity:0;}
-
-}
-
-
-/* -------- VALUE STYLE -------- */
 
 .value{
-
-font-size:25px;
-
+font-size:30px;
+margin-top:10px;
 }
 
+.safe{color:#22c55e;}
+.warning{color:#f59e0b;}
+.danger{
+color:#ef4444;
+animation:blink 1s infinite;
+}
+
+@keyframes blink{
+50%{opacity:0;}
+}
+
+button{
+background:#2563eb;
+border:none;
+padding:10px 20px;
+border-radius:8px;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
 
 </style>
 
-
 </head>
-
 
 <body>
 
-
 <h1>Smart Gas Detector Dashboard</h1>
-
-
 
 <div class="container">
 
-
-<!-- CO Gauge -->
-
 <div class="card">
-
 <h2>CO Level</h2>
-
 <div id="gaugeCO"></div>
-
 </div>
 
-
-
-<!-- Smoke Gauge -->
-
 <div class="card">
-
 <h2>Smoke Level</h2>
-
 <div id="gaugeSmoke"></div>
-
 </div>
 
-
-
-<!-- Status -->
-
 <div class="card">
-
 <h2>Status</h2>
-
-<div id="status" class="value">--</div>
-
+<div id="status" class="value">Loading...</div>
 </div>
 
-
 </div>
-
-
-
-<!-- Chart -->
 
 <div class="card">
-
+<h2>Sensor History</h2>
 <canvas id="chart"></canvas>
-
 </div>
 
-
-
-<!-- Alarm sound -->
+<div class="card">
+<button onclick="loadData()">Refresh Data</button>
+</div>
 
 <audio id="alarmSound">
-
 <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
-
 </audio>
-
-
 
 <script>
 
+// Firebase URL
+var url="https://co-smart-detector-2e4a7-default-rtdb.firebaseio.com/data.json";
 
-// -------- Firebase URL --------
-
-var url="https://cosmart-detector-default-rtdb.firebaseio.com/data.json";
-
-
-
-// -------- Create Gauges --------
-
+// Gauges
 var gaugeCO=new JustGage({
-
 id:"gaugeCO",
-
 value:0,
-
 min:0,
-
 max:5000,
-
 title:"CO"
-
 });
-
 
 var gaugeSmoke=new JustGage({
-
 id:"gaugeSmoke",
-
 value:0,
-
 min:0,
-
 max:5000,
-
 title:"Smoke"
-
 });
 
-
-
-// -------- Create Chart --------
-
+// Chart
 var chart=new Chart(document.getElementById("chart"),{
-
-type:'line',
-
+type:"line",
 data:{
-
 labels:[],
-
 datasets:[
-
 {
-
 label:"CO",
-
 data:[],
-
-borderColor:"red"
-
+borderColor:"red",
+fill:false
 },
-
 {
-
 label:"Smoke",
-
 data:[],
-
-borderColor:"blue"
-
+borderColor:"blue",
+fill:false
 }
-
 ]
-
+},
+options:{
+responsive:true,
+scales:{
+y:{beginAtZero:true}
 }
-
+}
 });
 
-
-
-
-// -------- Load Data --------
-
+// Load data
 function loadData(){
 
 fetch(url)
-
 .then(res=>res.json())
-
 .then(data=>{
 
+var keys=Object.keys(data);
+var last=data[keys[keys.length-1]];
 
 // update gauges
-
-gaugeCO.refresh(data.co);
-
-gaugeSmoke.refresh(data.smoke);
-
+gaugeCO.refresh(last.co);
+gaugeSmoke.refresh(last.smoke);
 
 // update status
+var status=document.getElementById("status");
+status.innerHTML=last.status;
 
-var statusElement=document.getElementById("status");
+status.className="value";
 
-statusElement.innerHTML=data.status;
-
-
-// remove old class
-
-statusElement.className="value";
-
-
-// apply color
-
-if(data.status=="SAFE"){
-
-statusElement.classList.add("safe");
-
+if(last.status=="SAFE"){
+status.classList.add("safe");
 stopAlarm();
-
 }
-
-
-else if(data.status=="WARNING"){
-
-statusElement.classList.add("warning");
-
+else if(last.status=="WARNING"){
+status.classList.add("warning");
 stopAlarm();
-
 }
-
-
 else{
-
-statusElement.classList.add("danger");
-
+status.classList.add("danger");
 playAlarm();
-
 }
-
-
 
 // update chart
 
-chart.data.labels.push("");
+chart.data.labels.push(new Date().toLocaleTimeString());
 
-chart.data.datasets[0].data.push(data.co);
+chart.data.datasets[0].data.push(last.co);
+chart.data.datasets[1].data.push(last.smoke);
 
-chart.data.datasets[1].data.push(data.smoke);
+if(chart.data.labels.length>20){
+chart.data.labels.shift();
+chart.data.datasets[0].data.shift();
+chart.data.datasets[1].data.shift();
+}
 
 chart.update();
-
-
 
 });
 
 }
 
-
-
-// -------- Alarm Sound --------
-
+// Alarm
 function playAlarm(){
-
 document.getElementById("alarmSound").play();
-
 }
-
 
 function stopAlarm(){
-
 document.getElementById("alarmSound").pause();
-
 }
 
-
-
-// -------- Refresh every second --------
-
-setInterval(loadData,1000);
-
+// refresh every 3 seconds
+setInterval(loadData,3000);
 
 </script>
 
-
-
 </body>
-
 </html>
